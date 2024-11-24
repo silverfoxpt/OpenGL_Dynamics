@@ -17,6 +17,7 @@
 #include "./Shape/TriangleColorTextureDraw.h"
 
 #include "./Shape/SquareGridColorDraw.h"
+#include "./Shape/ArrowColorDraw.h"
 
 // All texture implementation should be below here
 #define STB_IMAGE_IMPLEMENTATION
@@ -52,6 +53,8 @@ ShaderProgram squareGridShaderProgram;
 SquareGridColorDraw colorSquareGrid;
 std::vector<float> squareVertices, squareColors;
 
+ArrowColorDraw colorArrow;
+
 void Test() {
     stbi_set_flip_vertically_on_load(true); 
 }
@@ -67,6 +70,9 @@ void ProcessDrawing() {
 
     squareGridShaderProgram = ShaderProgram(squareVert.shaderId, squareFrag.shaderId);
     squareGridShaderProgram.DeleteLinkedShader(squareVert.shaderId, squareFrag.shaderId);
+
+    // For arrow
+    colorArrow = ArrowColorDraw(glm::vec3(100, 100, 0), glm::vec3(600, 600, 0), glm::vec3(0, 1, 0));
 }
 
 void ProcessRendering() {
@@ -84,6 +90,7 @@ void ProcessRendering() {
     // Draw
     squareGridShaderProgram.UseShaderProgram();
     colorSquareGrid.Draw(squareVertices.size() / 3);
+    colorArrow.Draw(2.0f);
 }
 
 /// @brief Resize window appropriately with glViewport, when user change window's size
@@ -128,12 +135,14 @@ int main() {
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
-    }  
+    } 
 
     // Create viewport - glViewport
     // First 2 set location of lower left corner of the rendered view
     // Last 2 set location of width and height of rendered view
     glViewport(0, 0, 800, 600);
+
+    glDisable(GL_DEPTH_TEST);
 
     // Let user resize windows
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  

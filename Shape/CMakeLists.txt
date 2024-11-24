@@ -7,6 +7,8 @@ add_library(Shape
     TriangleColorTextureDraw.h
     SquareGridColorDraw.cpp
     SquareGridColorDraw.h
+    ArrowColorDraw.h
+    ArrowColorDraw.cpp
 )
 
 target_link_libraries(Shape PRIVATE glad glfw glm)

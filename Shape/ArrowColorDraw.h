@@ -20,9 +20,7 @@ public:
 
     void UpdatePositions(const glm::vec3& newStart, const glm::vec3& newEnd);
     void UpdateColors(const glm::vec3& newColor);
-    void Draw();
-
-    ~ArrowColorDraw();
+    void Draw(float lineWidth);
 };
 
 #endif
