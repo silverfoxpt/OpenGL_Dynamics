@@ -14,6 +14,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/deps/glm")
 add_subdirectory("${PROJECT_SOURCE_DIR}/Shader")
 add_subdirectory("${PROJECT_SOURCE_DIR}/Shape")
 add_subdirectory("${PROJECT_SOURCE_DIR}/Texture")
+add_subdirectory("${PROJECT_SOURCE_DIR}/Dynamics")
 
 # For OpenGL 4.6
 add_subdirectory("${PROJECT_SOURCE_DIR}/deps/glad")
@@ -28,5 +29,6 @@ target_link_libraries(
     Shader
     Shape
     Texture
+    Dynamics
 )
 

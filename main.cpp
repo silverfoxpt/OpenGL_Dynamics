@@ -15,9 +15,10 @@
 #include "./Shape/TriangleDraw.h"
 #include "./Shape/TriangleColorDraw.h"
 #include "./Shape/TriangleColorTextureDraw.h"
-
 #include "./Shape/SquareGridColorDraw.h"
 #include "./Shape/ArrowColorDraw.h"
+
+#include "./Dynamics/VectorField.h"
 
 // All texture implementation should be below here
 #define STB_IMAGE_IMPLEMENTATION
@@ -52,6 +53,7 @@ ShaderProgram squareGridShaderProgram;
 
 SquareGridColorDraw colorSquareGrid;
 std::vector<float> squareVertices, squareColors;
+VectorField vecField;
 
 ArrowColorDraw colorArrow;
 
@@ -73,6 +75,7 @@ void ProcessDrawing() {
 
     // For arrow
     colorArrow = ArrowColorDraw(glm::vec3(100, 100, 0), glm::vec3(600, 600, 0), glm::vec3(0, 1, 0));
+    vecField = VectorField(100, 150, glm::vec2(1, -1));
 }
 
 void ProcessRendering() {
