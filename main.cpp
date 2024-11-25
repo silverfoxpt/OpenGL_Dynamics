@@ -64,8 +64,8 @@ void Test() {
 }
 
 void ProcessDrawing() {
-    int rows = 100, cols = 100;
-    float squareSize = 5;
+    int rows = 50, cols = 50;
+    float squareSize = 10;
 
     // For Square Grid
     squareVertices  = SquareGridColorDraw::GenerateSampleGrid(rows, cols, squareSize);
