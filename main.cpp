@@ -16,7 +16,7 @@
 #include "./Shape/TriangleColorDraw.h"
 #include "./Shape/TriangleColorTextureDraw.h"
 #include "./Shape/SquareGridColorDraw.h"
-#include "./Shape/ArrowColorDraw.h"
+#include "./Shape/LinesColorDraw.h"
 
 #include "./Dynamics/VectorField.h"
 
@@ -55,7 +55,7 @@ SquareGridColorDraw colorSquareGrid;
 std::vector<float> squareVertices, squareColors;
 VectorField vecField;
 
-ArrowColorDraw colorArrow;
+LinesColorDraw arrows;
 
 void Test() {
     stbi_set_flip_vertically_on_load(true); 
@@ -73,9 +73,9 @@ void ProcessDrawing() {
     squareGridShaderProgram = ShaderProgram(squareVert.shaderId, squareFrag.shaderId);
     squareGridShaderProgram.DeleteLinkedShader(squareVert.shaderId, squareFrag.shaderId);
 
-    // For arrow
-    colorArrow = ArrowColorDraw(glm::vec3(100, 100, 0), glm::vec3(600, 600, 0), glm::vec3(0, 1, 0));
+    // For vector field & arrow
     vecField = VectorField(100, 150, glm::vec2(1, -1));
+    arrows = LinesColorDraw(vecField.GeneratePositionField(0, 0, 5), vecField.GenerateColorField());
 }
 
 void ProcessRendering() {

@@ -1,7 +1,10 @@
 #include "VectorField.h"
 
-VectorField::VectorField(int rows, int cols, const glm::vec2& initialVec) {
+VectorField::VectorField(int rows, int cols, glm::vec2 initialVec) {
     this->rows = rows; this->cols = cols;
+    if (glm::length(initialVec) > this->maxStrength) {
+        initialVec = glm::normalize(initialVec) * maxStrength;
+    }
 
     for (int i = 0; i < rows; i++) {
         this->vectorField.push_back(std::vector<glm::vec2>());
@@ -47,10 +50,37 @@ std::vector<float> VectorField::GeneratePositionField(float startX, float startY
             // Add the start and end points of this vector to the positionData array.
             positionData.push_back(startXPos);
             positionData.push_back(startYPos);
+            positionData.push_back(0);
+
             positionData.push_back(endXPos);
             positionData.push_back(endYPos);
+            positionData.push_back(0);
         }
     }
 
     return positionData;
+}
+
+std::vector<float> VectorField::GenerateColorField() {
+    std::vector<float> colorData;  // This will hold the start and end points of each vector.
+
+    // Loop over each grid square.
+    for (int i = 0; i < this->rows; i++) {
+        for (int j = 0; j < this->cols; j++) {
+            // Get the vector (direction and magnitude) at the current grid cell.
+            glm::vec2 vector = this->vectorField[i][j];
+            float strength = glm::length(vector) / this->maxStrength;
+
+            // Add the start and end points of this vector to the positionData array.
+            colorData.push_back(defaultColor.r * strength);
+            colorData.push_back(defaultColor.g * strength);
+            colorData.push_back(defaultColor.b * strength);
+
+            colorData.push_back(defaultColor.r * strength);
+            colorData.push_back(defaultColor.g * strength);
+            colorData.push_back(defaultColor.b * strength);
+        }
+    }
+
+    return colorData;
 }
