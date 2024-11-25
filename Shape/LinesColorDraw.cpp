@@ -3,6 +3,8 @@
 LinesColorDraw::LinesColorDraw() {}
 
 LinesColorDraw::LinesColorDraw(const std::vector<float>& verticesPos, const std::vector<float>& verticesColor) {
+    this->colors = verticesColor; this->positions = verticesPos;
+    
     // Generate buffers and array object
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -29,7 +31,8 @@ LinesColorDraw::LinesColorDraw(const std::vector<float>& verticesPos, const std:
 
 void LinesColorDraw::Draw(float lineWidth) {
     glLineWidth(lineWidth);
+
     glBindVertexArray(VAO);
-    glDrawArrays(GL_LINES, 0, 2); // Draw the arrow as a line
+    glDrawArrays(GL_LINES, 0, this->positions.size() / 3); // Draw the arrow as a line
     glBindVertexArray(0);
 }

@@ -37,11 +37,11 @@ std::vector<float> VectorField::GeneratePositionField(float startX, float startY
             glm::vec2 vector = this->vectorField[i][j];
 
             // Calculate the start position of the vector (bottom-left corner of the square).
-            float startXPos = startX + j * squareLength;
-            float startYPos = startY + i * squareLength;
+            float startXPos = startX + j * squareLength + squareLength / 2;
+            float startYPos = startY - i * squareLength - squareLength / 2;
 
-            // Calculate the end position of the vector using the vector's direction and magnitude.
-            glm::vec2 endVector = glm::normalize(vector) * (glm::length(vector) * squareLength / 2);
+            // Calculate the end position of the vector
+            glm::vec2 endVector = glm::normalize(vector) * (squareLength / 2);
 
             // The end position is the start position plus the vector's direction scaled by its magnitude.
             float endXPos = startXPos + endVector.x;
@@ -72,13 +72,13 @@ std::vector<float> VectorField::GenerateColorField() {
             float strength = glm::length(vector) / this->maxStrength;
 
             // Add the start and end points of this vector to the positionData array.
-            colorData.push_back(defaultColor.r * strength);
-            colorData.push_back(defaultColor.g * strength);
-            colorData.push_back(defaultColor.b * strength);
+            colorData.push_back(defaultStartColor.r * strength);
+            colorData.push_back(defaultStartColor.g * strength);
+            colorData.push_back(defaultStartColor.b * strength);
 
-            colorData.push_back(defaultColor.r * strength);
-            colorData.push_back(defaultColor.g * strength);
-            colorData.push_back(defaultColor.b * strength);
+            colorData.push_back(defaultEndColor.r * strength);
+            colorData.push_back(defaultEndColor.g * strength);
+            colorData.push_back(defaultEndColor.b * strength);
         }
     }
 

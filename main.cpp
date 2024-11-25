@@ -53,7 +53,9 @@ ShaderProgram squareGridShaderProgram;
 
 SquareGridColorDraw colorSquareGrid;
 std::vector<float> squareVertices, squareColors;
+
 VectorField vecField;
+std::vector<float> arrowVertices, arrowColors;
 
 LinesColorDraw arrows;
 
@@ -62,10 +64,13 @@ void Test() {
 }
 
 void ProcessDrawing() {
+    int rows = 100, cols = 100;
+    float squareSize = 5;
+
     // For Square Grid
-    squareVertices  = SquareGridColorDraw::GenerateSampleGrid(100, 150, 5);
-    squareColors    = SquareGridColorDraw::GenerateSampleGridColors(100, 150);
-    colorSquareGrid = SquareGridColorDraw(100, 150, 5, squareVertices, squareColors, GL_DYNAMIC_DRAW);
+    squareVertices  = SquareGridColorDraw::GenerateSampleGrid(rows, cols, squareSize);
+    squareColors    = SquareGridColorDraw::GenerateSampleGridColors(rows, cols);
+    colorSquareGrid = SquareGridColorDraw(rows, cols, squareSize, squareVertices, squareColors, GL_DYNAMIC_DRAW);
 
     VertexShader squareVert = VertexShader(std::string(PROJECT_ROOT_DIR) + "/Shader/Vertex/colorOnly.vert");
     FragmentShader squareFrag = FragmentShader(std::string(PROJECT_ROOT_DIR) + "/Shader/Fragment/colorOnly.frag");
@@ -74,8 +79,10 @@ void ProcessDrawing() {
     squareGridShaderProgram.DeleteLinkedShader(squareVert.shaderId, squareFrag.shaderId);
 
     // For vector field & arrow
-    vecField = VectorField(100, 150, glm::vec2(1, -1));
-    arrows = LinesColorDraw(vecField.GeneratePositionField(0, 0, 5), vecField.GenerateColorField());
+    vecField = VectorField(rows, cols, glm::vec2(10, -10));
+    arrowVertices = vecField.GeneratePositionField(0, 0, squareSize);
+    arrowColors = vecField.GenerateColorField();
+    arrows = LinesColorDraw(arrowVertices, arrowColors);
 }
 
 void ProcessRendering() {
@@ -87,13 +94,13 @@ void ProcessRendering() {
     //view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f)); // Move camera backward 3 unit
     squareGridShaderProgram.SetMatrix4("view", view);
 
-    glm::mat4 projection = glm::ortho(0.0f, 800.0f, 600.0f, 0.0f, 0.0f, 100.0f); //projection matrix - account for aspect ratio
+    glm::mat4 projection = glm::ortho(0.0f, 800.0f, -600.0f, 0.0f, 0.0f, 100.0f); //projection matrix - account for aspect ratio
     squareGridShaderProgram.SetMatrix4("projection", projection);
 
     // Draw
     squareGridShaderProgram.UseShaderProgram();
     colorSquareGrid.Draw(squareVertices.size() / 3);
-    colorArrow.Draw(2.0f);
+    arrows.Draw(2.0f);
 }
 
 /// @brief Resize window appropriately with glViewport, when user change window's size

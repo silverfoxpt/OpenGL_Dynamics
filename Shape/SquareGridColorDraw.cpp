@@ -5,19 +5,19 @@ std::vector<float> SquareGridColorDraw::GenerateSampleGrid(int rows, int cols, f
     for (int row = 0; row < rows; ++row) {
         for (int col = 0; col < cols; ++col) {
             float x = col * squareSize;
-            float y = row * squareSize;
+            float y = -row * squareSize;
 
             // Define the two triangles for this square
             float squareVertices[] = {
                 // Triangle 1
                 x, y, 0.0f,
                 x + squareSize, y, 0.0f,
-                x, y + squareSize, 0.0f,
+                x, y - squareSize, 0.0f,
 
                 // Triangle 2
                 x + squareSize, y, 0.0f,
-                x + squareSize, y + squareSize, 0.0f,
-                x, y + squareSize, 0.0f
+                x + squareSize, y - squareSize, 0.0f,
+                x, y - squareSize, 0.0f
             };
             vertices.insert(vertices.end(), std::begin(squareVertices), std::end(squareVertices));
         }

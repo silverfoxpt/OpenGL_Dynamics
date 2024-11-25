@@ -13,7 +13,7 @@
 class LinesColorDraw {
 public:
     unsigned int VBO_position, VBO_color, VAO;
-    glm::vec3 startPosition, endPosition, color;
+    std::vector<float> colors, positions;
 
     LinesColorDraw();
     LinesColorDraw(const std::vector<float>& position, const std::vector<float>& color);
