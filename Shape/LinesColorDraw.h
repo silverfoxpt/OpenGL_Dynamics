@@ -18,8 +18,8 @@ public:
     LinesColorDraw();
     LinesColorDraw(const std::vector<float>& position, const std::vector<float>& color);
 
-    void UpdatePositions(const glm::vec3& newStart, const glm::vec3& newEnd);
-    void UpdateColors(const glm::vec3& newColor);
+    void UpdatePositions(const std::vector<float>& newPositions);
+    void UpdateColors(const std::vector<float>& newColors);
     void Draw(float lineWidth);
 };
 

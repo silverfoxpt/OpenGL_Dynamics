@@ -22,11 +22,14 @@ class VectorField {
         VectorField(int rows, int cols, glm::vec2 initialVec);
 
         glm::vec2 GetVector(int rowIdx, int colIdx);
+        void SetVector(int rowIdx, int colIdx, glm::vec2 newValue);
+
         glm::vec2 GetUnitVector(int rowIdx, int colIdx);
         float GetStrengthVector(int rowIdx, int colIdx);
 
         std::vector<float> GeneratePositionField(float startX, float startY, float length);
         std::vector<float> GenerateColorField();
+        void TestUpdate();
 };
 
 #endif

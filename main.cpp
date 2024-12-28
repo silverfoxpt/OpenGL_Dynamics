@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <cmath>
 #include <chrono>
+#include <thread>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -51,22 +52,23 @@ void PrintFPS() {
 GLFWwindow* window;
 ShaderProgram squareGridShaderProgram;
 
-SquareGridColorDraw colorSquareGrid;
-std::vector<float> squareVertices, squareColors;
+// Values
+int rows = 20, cols = 20;
+float squareSize = 25;
 
 VectorField vecField;
-std::vector<float> arrowVertices, arrowColors;
 
+// Displaying
 LinesColorDraw arrows;
+
+SquareGridColorDraw colorSquareGrid;
+std::vector<float> squareVertices, squareColors;
 
 void Test() {
     stbi_set_flip_vertically_on_load(true); 
 }
 
 void ProcessDrawing() {
-    int rows = 20, cols = 20;
-    float squareSize = 25;
-
     // For Square Grid
     squareVertices  = SquareGridColorDraw::GenerateSampleGrid(rows, cols, squareSize);
     squareColors    = SquareGridColorDraw::GenerateSampleGridColors(rows, cols);
@@ -80,9 +82,10 @@ void ProcessDrawing() {
 
     // For vector field & arrow
     vecField = VectorField(rows, cols, glm::vec2(10, -10));
-    arrowVertices = vecField.GeneratePositionField(0, 0, squareSize);
-    arrowColors = vecField.GenerateColorField();
-    arrows = LinesColorDraw(arrowVertices, arrowColors);
+    arrows = LinesColorDraw(
+        vecField.GeneratePositionField(0, 0, squareSize), 
+        vecField.GenerateColorField()
+    );
 }
 
 void ProcessRendering() {
@@ -97,9 +100,15 @@ void ProcessRendering() {
     glm::mat4 projection = glm::ortho(0.0f, 800.0f, -600.0f, 0.0f, 0.0f, 100.0f); //projection matrix - account for aspect ratio
     squareGridShaderProgram.SetMatrix4("projection", projection);
 
-    // Draw
+    // Draw square grid
     squareGridShaderProgram.UseShaderProgram();
     colorSquareGrid.Draw(squareVertices.size() / 3);
+
+    // Draw arrow grid
+    vecField.TestUpdate();
+    arrows.UpdatePositions(vecField.GeneratePositionField(0, 0, squareSize));
+    arrows.UpdateColors(vecField.GenerateColorField());
+
     arrows.Draw(2.0f);
 }
 
@@ -173,7 +182,7 @@ int main() {
 
         // Draw!
         ProcessRendering();
-
+        
         PrintFPS();
 
         // Swap buffers

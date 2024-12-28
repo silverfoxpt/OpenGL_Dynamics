@@ -19,6 +19,10 @@ glm::vec2 VectorField::GetVector(int rowIdx, int colIdx) {
     return this->vectorField[rowIdx][colIdx];
 }
 
+void VectorField::SetVector(int rowIdx, int colIdx, glm::vec2 newValue) {
+    this->vectorField[rowIdx][colIdx] = newValue;
+}
+
 glm::vec2 VectorField::GetUnitVector(int rowIdx, int colIdx) {
     return glm::normalize(this->vectorField[rowIdx][colIdx]);
 }
@@ -83,4 +87,22 @@ std::vector<float> VectorField::GenerateColorField() {
     }
 
     return colorData;
+}
+
+void VectorField::TestUpdate() {
+    float angleDegrees = -0.1f;
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            glm::vec2 curVec = GetVector(i, j);
+
+            // Convert degrees to radians
+            float angleRadians = glm::radians(angleDegrees);
+
+            // Calculate the rotated coordinates
+            float x = curVec.x * glm::cos(angleRadians) - curVec.y * glm::sin(angleRadians);
+            float y = curVec.x * glm::sin(angleRadians) + curVec.y * glm::cos(angleRadians);
+
+            SetVector(i, j, glm::vec2(x, y));
+        }
+    }
 }

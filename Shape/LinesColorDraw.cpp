@@ -29,6 +29,20 @@ LinesColorDraw::LinesColorDraw(const std::vector<float>& verticesPos, const std:
     glBindVertexArray(0);
 }
 
+void LinesColorDraw::UpdatePositions(const std::vector<float>& newPositions) {
+    this->positions = newPositions;
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_position);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, newPositions.size() * sizeof(float), newPositions.data());
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void LinesColorDraw::UpdateColors(const std::vector<float>& newColors) {
+    this->colors = newColors;
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_color);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, newColors.size() * sizeof(float), newColors.data());
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 void LinesColorDraw::Draw(float lineWidth) {
     glLineWidth(lineWidth);
 
