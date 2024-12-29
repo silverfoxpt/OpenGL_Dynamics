@@ -21,6 +21,7 @@ class ValueField {
         ValueField(int rows, int cols, float initialVal);
 
         float GetValue(int rowIdx, int colIdx);
+        void SetValue(int rowIdx, int colIdx, float newVal);
         
         std::vector<float> GenerateColorField();
 };

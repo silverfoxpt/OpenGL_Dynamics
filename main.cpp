@@ -2,7 +2,6 @@
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>
 #include <cmath>
-#include <chrono>
 #include <thread>
 
 #include <glm/glm.hpp>
@@ -20,6 +19,7 @@
 #include "./Shape/LinesColorDraw.h"
 
 #include "./Dynamics/VectorField.h"
+#include "./Dynamics/ValueField.h"
 
 // All texture implementation should be below here
 #define STB_IMAGE_IMPLEMENTATION
@@ -50,19 +50,19 @@ void PrintFPS() {
 }
 
 GLFWwindow* window;
-ShaderProgram squareGridShaderProgram;
+ShaderProgram colorOnlyShaderProgram;
 
 // Values
 int rows = 20, cols = 20;
 float squareSize = 25;
 
 VectorField vecField;
+ValueField valField;
 
 // Displaying
 LinesColorDraw arrows;
-
 SquareGridColorDraw colorSquareGrid;
-std::vector<float> squareVertices, squareColors;
+std::vector<float> squareVertices; // For caching purposes
 
 void Test() {
     stbi_set_flip_vertically_on_load(true); 
@@ -70,15 +70,23 @@ void Test() {
 
 void ProcessDrawing() {
     // For Square Grid
+    valField = ValueField(rows, cols, 0.0f);
+
     squareVertices  = SquareGridColorDraw::GenerateSampleGrid(rows, cols, squareSize);
-    squareColors    = SquareGridColorDraw::GenerateSampleGridColors(rows, cols);
-    colorSquareGrid = SquareGridColorDraw(rows, cols, squareSize, squareVertices, squareColors, GL_DYNAMIC_DRAW);
+    colorSquareGrid = SquareGridColorDraw(
+        rows, 
+        cols, 
+        squareSize, 
+        squareVertices, 
+        valField.GenerateColorField(), 
+        GL_DYNAMIC_DRAW
+    );
 
-    VertexShader squareVert = VertexShader(std::string(PROJECT_ROOT_DIR) + "/Shader/Vertex/colorOnly.vert");
-    FragmentShader squareFrag = FragmentShader(std::string(PROJECT_ROOT_DIR) + "/Shader/Fragment/colorOnly.frag");
+    VertexShader colorOnlyVert = VertexShader(std::string(PROJECT_ROOT_DIR) + "/Shader/Vertex/colorOnly.vert");
+    FragmentShader colorOnlyFrag = FragmentShader(std::string(PROJECT_ROOT_DIR) + "/Shader/Fragment/colorOnly.frag");
 
-    squareGridShaderProgram = ShaderProgram(squareVert.shaderId, squareFrag.shaderId);
-    squareGridShaderProgram.DeleteLinkedShader(squareVert.shaderId, squareFrag.shaderId);
+    colorOnlyShaderProgram = ShaderProgram(colorOnlyVert.shaderId, colorOnlyFrag.shaderId);
+    colorOnlyShaderProgram.DeleteLinkedShader(colorOnlyVert.shaderId, colorOnlyFrag.shaderId);
 
     // For vector field & arrow
     vecField = VectorField(rows, cols, glm::vec2(10, -10));
@@ -91,24 +99,23 @@ void ProcessDrawing() {
 void ProcessRendering() {
     // Get transformations
     glm::mat4 model = glm::mat4(1.0f); // world coords
-    squareGridShaderProgram.SetMatrix4("model", model);
+    colorOnlyShaderProgram.SetMatrix4("model", model);
     
     glm::mat4 view = glm::mat4(1.0f); // camera matrix
     //view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f)); // Move camera backward 3 unit
-    squareGridShaderProgram.SetMatrix4("view", view);
+    colorOnlyShaderProgram.SetMatrix4("view", view);
 
     glm::mat4 projection = glm::ortho(0.0f, 800.0f, -600.0f, 0.0f, 0.0f, 100.0f); //projection matrix - account for aspect ratio
-    squareGridShaderProgram.SetMatrix4("projection", projection);
+    colorOnlyShaderProgram.SetMatrix4("projection", projection);
 
     // Draw square grid
-    squareGridShaderProgram.UseShaderProgram();
+    colorOnlyShaderProgram.UseShaderProgram();
+    colorSquareGrid.UpdateColors(valField.GenerateColorField());
     colorSquareGrid.Draw(squareVertices.size() / 3);
 
     // Draw arrow grid
-    vecField.TestUpdate();
     arrows.UpdatePositions(vecField.GeneratePositionField(0, 0, squareSize));
     arrows.UpdateColors(vecField.GenerateColorField());
-
     arrows.Draw(2.0f);
 }
 

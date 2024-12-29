@@ -33,6 +33,7 @@ float VectorField::GetStrengthVector(int rowIdx, int colIdx) {
 
 std::vector<float> VectorField::GeneratePositionField(float startX, float startY, float squareLength) {
     std::vector<float> positionData;  // This will hold the start and end points of each vector.
+    positionData.reserve(this->rows * this->cols * 6);
 
     // Loop over each grid square.
     for (int i = 0; i < this->rows; i++) {
@@ -66,7 +67,8 @@ std::vector<float> VectorField::GeneratePositionField(float startX, float startY
 }
 
 std::vector<float> VectorField::GenerateColorField() {
-    std::vector<float> colorData;  // This will hold the start and end points of each vector.
+    std::vector<float> colorData;  // This will hold the color of each arrow.
+    colorData.reserve(this->rows * this->cols * 6);
 
     // Loop over each grid square.
     for (int i = 0; i < this->rows; i++) {
@@ -75,7 +77,7 @@ std::vector<float> VectorField::GenerateColorField() {
             glm::vec2 vector = this->vectorField[i][j];
             float strength = glm::length(vector) / this->maxStrength;
 
-            // Add the start and end points of this vector to the positionData array.
+            // Add the color of this vector to the colorData array.
             colorData.push_back(defaultStartColor.r * strength);
             colorData.push_back(defaultStartColor.g * strength);
             colorData.push_back(defaultStartColor.b * strength);
