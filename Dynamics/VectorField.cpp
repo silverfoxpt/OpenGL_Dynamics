@@ -20,6 +20,9 @@ glm::vec2 VectorField::GetVector(int rowIdx, int colIdx) {
 }
 
 void VectorField::SetVector(int rowIdx, int colIdx, glm::vec2 newValue) {
+    if (glm::length(newValue) > this->maxStrength) {
+        newValue = glm::normalize(newValue) * maxStrength;
+    }
     this->vectorField[rowIdx][colIdx] = newValue;
 }
 
@@ -40,13 +43,14 @@ std::vector<float> VectorField::GeneratePositionField(float startX, float startY
         for (int j = 0; j < this->cols; j++) {
             // Get the vector (direction and magnitude) at the current grid cell.
             glm::vec2 vector = this->vectorField[i][j];
+            float strength = glm::length(vector) / this->maxStrength;
 
             // Calculate the start position of the vector (bottom-left corner of the square).
             float startXPos = startX + j * squareLength + squareLength / 2;
             float startYPos = startY - i * squareLength - squareLength / 2;
 
             // Calculate the end position of the vector
-            glm::vec2 endVector = glm::normalize(vector) * (squareLength / 2);
+            glm::vec2 endVector = glm::normalize(vector) * (squareLength / 2) * strength;
 
             // The end position is the start position plus the vector's direction scaled by its magnitude.
             float endXPos = startXPos + endVector.x;

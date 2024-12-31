@@ -11,13 +11,29 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "VectorField.h"
+#include "ValueField.h"
 
 class FluidSolver {
     public:
         float timeStep;
-        FluidSolver(float timeStep) {}
+        float initialDensity = 0.0f;
+        float diffusionRate = 0.1f;
+        glm::vec2 initialVelocity = glm::vec2(0.0f, 0.0f);
 
-        VectorField Step(VectorField currentField);
+        int rows, cols;
+
+        ValueField currentDensity, nextDensity;
+        VectorField currentVelocity, nextVelocity;
+
+        FluidSolver(int rows, int cols);
+
+        void Diffusion();
+        void Advection();
+        void ClearDivergence();
+        void AddVorticityConfinement();
+
+        void SetReflectiveBoundary();
+        void Step();
 };
 
 #endif

@@ -20,14 +20,152 @@
 
 #include "./Dynamics/VectorField.h"
 #include "./Dynamics/ValueField.h"
+#include "./Dynamics/FluidSolver.h"
 
 // All texture implementation should be below here
 #define STB_IMAGE_IMPLEMENTATION
 #include "./Texture/Texture2D.h"
 
+// Variables to store mouse click position in world coordinates
+// glm::vec2 clickedPosition(0.0f, 0.0f);
+// bool mouseClicked = false;
+
+// // Mouse callback function
+// void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+//     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+//         mouseClicked = true;
+
+//         // Get cursor position in screen coordinates
+//         double xpos, ypos;
+//         glfwGetCursorPos(window, &xpos, &ypos);
+
+//         // Get window size to transform screen coordinates
+//         int width, height;
+//         glfwGetWindowSize(window, &width, &height);
+
+//         // Convert screen coordinates to normalized device coordinates (NDC)
+//         float xNDC = (2.0f * xpos) / width - 1.0f;
+//         float yNDC = 1.0f - (2.0f * ypos) / height;
+
+//         // Convert NDC to world coordinates
+//         glm::vec4 ndcCoords = glm::vec4(xNDC, yNDC, 0.0f, 1.0f);
+
+//         // Define your view and projection matrices
+//         glm::mat4 view = glm::mat4(1.0f);
+//         glm::mat4 projection = glm::ortho(0.0f, 800.0f, -600.0f, 0.0f, 0.0f, 100.0f);
+
+//         // Transform NDC to world coordinates using the inverse of projection and view
+//         glm::mat4 inverseMatrix = glm::inverse(projection * view);
+//         glm::vec4 worldCoords = inverseMatrix * ndcCoords;
+
+//         // Divide by w to perform perspective division (if necessary)
+//         worldCoords /= worldCoords.w;
+
+//         // Store the world coordinates
+//         clickedPosition = glm::vec2(worldCoords.x, worldCoords.y);
+
+//         // Output to console for debugging
+//         std::cout << "Mouse clicked at world position: (" << clickedPosition.x << ", " << clickedPosition.y << ")" << std::endl;
+//     } else {
+//         mouseClicked = false;
+//     }
+// }
+
+// Variables to store mouse state and positions
+struct MouseState {
+    glm::vec2 currentPosition{0.0f, 0.0f};
+    glm::vec2 previousPosition{0.0f, 0.0f};
+    glm::vec2 dragDirection{0.0f, 0.0f};
+    bool isDragging = false;
+    bool isPressed = false;
+};
+
+MouseState mouseState;
+
+// Helper function to convert screen to world coordinates
+glm::vec2 screenToWorldCoords(double xpos, double ypos, GLFWwindow* window) {
+    // Get window size
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
+    // Convert to NDC
+    float xNDC = (2.0f * xpos) / width - 1.0f;
+    float yNDC = 1.0f - (2.0f * ypos) / height;
+
+    // Convert NDC to world coordinates
+    glm::vec4 ndcCoords = glm::vec4(xNDC, yNDC, 0.0f, 1.0f);
+    
+    // Define your view and projection matrices
+    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 projection = glm::ortho(0.0f, 800.0f, -600.0f, 0.0f, 0.0f, 100.0f);
+
+    // Transform to world coordinates
+    glm::mat4 inverseMatrix = glm::inverse(projection * view);
+    glm::vec4 worldCoords = inverseMatrix * ndcCoords;
+    worldCoords /= worldCoords.w;
+
+    return glm::vec2(worldCoords.x, worldCoords.y);
+}
+
+// Mouse button callback
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            mouseState.isPressed = true;
+            
+            // Get initial position
+            double xpos, ypos;
+            glfwGetCursorPos(window, &xpos, &ypos);
+            mouseState.currentPosition = screenToWorldCoords(xpos, ypos, window);
+            mouseState.previousPosition = mouseState.currentPosition;
+            
+            // std::cout << "Mouse pressed at: (" 
+            //           << mouseState.currentPosition.x << ", " 
+            //           << mouseState.currentPosition.y << ")" << std::endl;
+        }
+        else if (action == GLFW_RELEASE) {
+            mouseState.isPressed = false;
+            mouseState.isDragging = false;
+            mouseState.dragDirection = glm::vec2(0.0f, 0.0f);
+            
+            // std::cout << "Mouse released" << std::endl;
+        }
+    }
+}
+
+// Mouse movement callback
+void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos) {
+    if (mouseState.isPressed) {
+        // Update current position
+        mouseState.previousPosition = mouseState.currentPosition;
+        mouseState.currentPosition = screenToWorldCoords(xpos, ypos, window);
+        
+        // Calculate drag direction and distance
+        glm::vec2 dragDelta = mouseState.currentPosition - mouseState.previousPosition;
+        float dragDistance = glm::length(dragDelta);
+        
+        // Set minimum drag threshold to distinguish between click and drag
+        const float dragThreshold = 1.0f; // Adjust this value based on your needs
+        
+        if (dragDistance > dragThreshold) {
+            mouseState.isDragging = true;
+            mouseState.dragDirection = glm::normalize(dragDelta);
+            
+            // std::cout << "Dragging - Position: (" 
+            //           << mouseState.currentPosition.x << ", " 
+            //           << mouseState.currentPosition.y 
+            //           << ") Direction: (" 
+            //           << mouseState.dragDirection.x << ", " 
+            //           << mouseState.dragDirection.y 
+            //           << ") Speed: " << dragDistance << std::endl;
+        }
+    }
+}
+
 // Global variables for FPS calculation
 auto lastTime = std::chrono::high_resolution_clock::now();
 int frameCount = 0;
+double currentFPS = 3000;
 
 void PrintFPS() {
     // Current time
@@ -41,7 +179,8 @@ void PrintFPS() {
     
     // Print FPS every second
     if (elapsedTime >= 1.0) {
-        std::cout << "FPS: " << frameCount / elapsedTime << std::endl;
+        currentFPS = frameCount / elapsedTime;
+        std::cout << "FPS: " << currentFPS << std::endl;        
         
         // Reset for the next interval
         frameCount = 0;
@@ -53,11 +192,10 @@ GLFWwindow* window;
 ShaderProgram colorOnlyShaderProgram;
 
 // Values
-int rows = 20, cols = 20;
-float squareSize = 25;
+int rows = 70, cols = 70;
+float squareSize = 8;
 
-VectorField vecField;
-ValueField valField;
+FluidSolver fluidSimulation(rows, cols);
 
 // Displaying
 LinesColorDraw arrows;
@@ -70,15 +208,13 @@ void Test() {
 
 void ProcessDrawing() {
     // For Square Grid
-    valField = ValueField(rows, cols, 0.0f);
-
     squareVertices  = SquareGridColorDraw::GenerateSampleGrid(rows, cols, squareSize);
     colorSquareGrid = SquareGridColorDraw(
         rows, 
         cols, 
         squareSize, 
         squareVertices, 
-        valField.GenerateColorField(), 
+        fluidSimulation.currentDensity.GenerateColorField(), 
         GL_DYNAMIC_DRAW
     );
 
@@ -89,14 +225,33 @@ void ProcessDrawing() {
     colorOnlyShaderProgram.DeleteLinkedShader(colorOnlyVert.shaderId, colorOnlyFrag.shaderId);
 
     // For vector field & arrow
-    vecField = VectorField(rows, cols, glm::vec2(10, -10));
     arrows = LinesColorDraw(
-        vecField.GeneratePositionField(0, 0, squareSize), 
-        vecField.GenerateColorField()
+        fluidSimulation.currentVelocity.GeneratePositionField(0, 0, squareSize), 
+        fluidSimulation.currentVelocity.GenerateColorField()
     );
 }
 
 void ProcessRendering() {
+    // Check mouse clicked
+    if (mouseState.isDragging) {
+        fluidSimulation.currentVelocity.SetVector(
+            (int) abs(mouseState.currentPosition.y) / squareSize,
+            (int) abs(mouseState.currentPosition.x) / squareSize,
+            glm::normalize(mouseState.dragDirection) * 60.0f
+        );
+    }
+    
+    if (mouseState.isPressed) {
+        fluidSimulation.currentDensity.SetValue(
+            (int) abs(mouseState.currentPosition.y) / squareSize,
+            (int) abs(mouseState.currentPosition.x) / squareSize,
+            1.0f
+        );
+    }
+
+    fluidSimulation.timeStep = 1.0f / currentFPS;
+    fluidSimulation.Step();
+
     // Get transformations
     glm::mat4 model = glm::mat4(1.0f); // world coords
     colorOnlyShaderProgram.SetMatrix4("model", model);
@@ -110,13 +265,13 @@ void ProcessRendering() {
 
     // Draw square grid
     colorOnlyShaderProgram.UseShaderProgram();
-    colorSquareGrid.UpdateColors(valField.GenerateColorField());
+    colorSquareGrid.UpdateColors(fluidSimulation.currentDensity.GenerateColorField());
     colorSquareGrid.Draw(squareVertices.size() / 3);
 
     // Draw arrow grid
-    arrows.UpdatePositions(vecField.GeneratePositionField(0, 0, squareSize));
-    arrows.UpdateColors(vecField.GenerateColorField());
-    arrows.Draw(2.0f);
+    // arrows.UpdatePositions(fluidSimulation.currentVelocity.GeneratePositionField(0, 0, squareSize));
+    // arrows.UpdateColors(fluidSimulation.currentVelocity.GenerateColorField());
+    // arrows.Draw(2.0f);
 }
 
 /// @brief Resize window appropriately with glViewport, when user change window's size
@@ -172,6 +327,8 @@ int main() {
 
     // Let user resize windows
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSetCursorPosCallback(window, cursorPositionCallback);
 
     Test();
     ProcessDrawing();
