@@ -17,7 +17,7 @@ class FluidSolver {
     public:
         float timeStep;
         float initialDensity = 0.0f;
-        float diffusionRate = 0.1f;
+        float diffusionRate = 0.05f;
         glm::vec2 initialVelocity = glm::vec2(0.0f, 0.0f);
 
         int rows, cols;

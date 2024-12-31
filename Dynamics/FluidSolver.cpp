@@ -46,8 +46,8 @@ void FluidSolver::Diffusion() {
     nextDensity = currentDensity;
 
     for (int iter = 0; iter < maxIterations; ++iter) {
-        for (int i = 0; i < rows; ++i) {
-            for (int j = 0; j < cols; ++j) {
+        for (int i = 1; i < rows - 1; ++i) {
+            for (int j = 1; j < cols - 1; ++j) {
                 // Accumulate values of valid neighbors
                 float sum = 0.0f;
                 int count = 0;
@@ -83,8 +83,8 @@ void FluidSolver::Advection() {
     nextVelocity = currentVelocity;
 
     // Traverse each grid cell for density advection
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
+    for (int i = 1; i < rows - 1; ++i) {
+        for (int j = 1; j < cols - 1; ++j) {
             // Compute the backward position of the current cell
             float x = j - currentVelocity.GetVector(i, j).x * dt / gridSpacing;
             float y = i - currentVelocity.GetVector(i, j).y * dt / gridSpacing;
