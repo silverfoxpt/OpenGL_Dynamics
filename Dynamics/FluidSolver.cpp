@@ -297,9 +297,9 @@ void FluidSolver::ClearDivergence() {
 }
 
 void FluidSolver::Step() {
-    // Add upward velocity to create movement
+    // Add velocity to create movement
     float baseVelocity = currentVelocity.maxStrength; // Adjust this value to control speed
-    glm::vec2 sourceVelocity(baseVelocity, 0.0f); // Negative y means upward
+    glm::vec2 sourceVelocity(baseVelocity, 0.0f);
 
     int offset = 40;
     for (int i = rows / 2 - offset; i < rows / 2 + offset; i++) {
