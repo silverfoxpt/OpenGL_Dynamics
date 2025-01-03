@@ -5,6 +5,7 @@
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>
 #include <vector>
+#include <thread>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -31,7 +32,6 @@ class FluidSolver {
         void Diffusion();
         void Advection();
         void ClearDivergence();
-        void AddVorticityConfinement();
 
         void SetReflectiveBoundary();
         void Step();

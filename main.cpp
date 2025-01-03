@@ -149,8 +149,8 @@ GLFWwindow* window;
 ShaderProgram colorOnlyShaderProgram;
 
 // Values
-int rows = 200, cols = 200;
-float squareSize = 3;
+int rows = 400, cols = 400;
+float squareSize = 1;
 
 FluidSolver fluidSimulation(rows, cols);
 
@@ -285,8 +285,8 @@ int main() {
 
     // Let user resize windows
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  
-    glfwSetMouseButtonCallback(window, mouseButtonCallback);
-    glfwSetCursorPosCallback(window, cursorPositionCallback);
+    //glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    //glfwSetCursorPosCallback(window, cursorPositionCallback);
 
     Test();
     ProcessDrawing();
