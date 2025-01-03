@@ -13,6 +13,7 @@ ValueField::ValueField(int rows, int cols, float initialVal) {
             this->valueField[i].push_back(initialVal);
         }
     }
+    colorData.resize(this->rows * this->cols * 6 * 3);
 }
 
 float ValueField::GetValue(int rowIdx, int colIdx) {
@@ -24,25 +25,28 @@ void ValueField::SetValue(int rowIdx, int colIdx, float newVal) {
 }
 
 std::vector<float> ValueField::GenerateColorField() {
-    std::vector<float> colorData;  // This will hold the color of each arrow.
-    colorData.reserve(this->rows * this->cols * 6);
+    int cnt = 0;
 
-    // Loop over each grid square.
+    // Loop over each grid square
     for (int i = 0; i < this->rows; i++) {
         for (int j = 0; j < this->cols; j++) {
-            // Get the value at the current grid cell.
+            // Get the value at the current grid cell
             float value = GetValue(i, j);
             float strength = value / this->maxValue;
 
+            // Precompute scaled color values
+            float r = defaultMaxColor.r * strength;
+            float g = defaultMaxColor.g * strength;
+            float b = defaultMaxColor.b * strength;
+
             // Add color to color array
-            for (int k = 0; k <  6; k++) {
-                colorData.push_back(defaultMaxColor.r * strength);
-                colorData.push_back(defaultMaxColor.g * strength);
-                colorData.push_back(defaultMaxColor.b * strength);
+            for (int k = 0; k < 6; k++) {
+                colorData[cnt++] = r;
+                colorData[cnt++] = g; 
+                colorData[cnt++] = b; 
             }
             
         }
     }
-
     return colorData;
 }

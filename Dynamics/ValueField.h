@@ -17,6 +17,8 @@ class ValueField {
         float maxValue = 1.0;
         glm::vec3 defaultMaxColor = glm::vec3(1.0f, 1.0f, 1.0f); //White
 
+        std::vector<float> colorData;
+
         ValueField() { }
         ValueField(int rows, int cols, float initialVal);
 
@@ -24,6 +26,16 @@ class ValueField {
         void SetValue(int rowIdx, int colIdx, float newVal);
         
         std::vector<float> GenerateColorField();
+
+        // Swap function
+        void SwapWith(ValueField& other) {
+            std::swap(valueField, other.valueField);
+            std::swap(rows, other.rows);
+            std::swap(cols, other.cols);
+            std::swap(maxValue, other.maxValue);
+            std::swap(defaultMaxColor, other.defaultMaxColor);
+            std::swap(colorData, other.colorData);
+        }
 };
 
 #endif

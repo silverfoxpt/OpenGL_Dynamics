@@ -42,9 +42,6 @@ void FluidSolver::Diffusion() {
     int maxIterations = 3; // Number of iterations for convergence
     float alpha = diffusionRate * timeStep;
 
-    // Initialize nextDensity with currentDensity
-    nextDensity = currentDensity;
-
     for (int iter = 0; iter < maxIterations; ++iter) {
         for (int i = 1; i < rows - 1; ++i) {
             for (int j = 1; j < cols - 1; ++j) {
@@ -53,22 +50,22 @@ void FluidSolver::Diffusion() {
                 int count = 0;
 
                 // Check neighbors
-                if (i > 0) { sum += nextDensity.GetValue(i - 1, j); ++count; }
-                if (i < rows - 1) { sum += nextDensity.GetValue(i + 1, j); ++count; }
-                if (j > 0) { sum += nextDensity.GetValue(i, j - 1); ++count; }
-                if (j < cols - 1) { sum += nextDensity.GetValue(i, j + 1); ++count; }
+                if (i > 0) { sum += currentDensity.GetValue(i - 1, j); ++count; }
+                if (i < rows - 1) { sum += currentDensity.GetValue(i + 1, j); ++count; }
+                if (j > 0) { sum += currentDensity.GetValue(i, j - 1); ++count; }
+                if (j < cols - 1) { sum += currentDensity.GetValue(i, j + 1); ++count; }
 
                 // Average neighbors
                 float avg = sum / count;
 
                 // Update cell value
-                float newVal = (nextDensity.GetValue(i, j) + alpha * avg) / (1 + alpha);
+                float newVal = (currentDensity.GetValue(i, j) + alpha * avg) / (1 + alpha);
                 nextDensity.SetValue(i, j, newVal);
             }
         }
     }
 
-    currentDensity = nextDensity;
+    currentDensity.SwapWith(nextDensity);
 }
 
 void FluidSolver::Advection() {
@@ -77,10 +74,6 @@ void FluidSolver::Advection() {
     // Parameters for advection
     float dt = timeStep;
     float gridSpacing = 1.0f; // Assuming uniform grid spacing of 1 unit.
-
-    // Initialize nextDensity and nextVelocity with current values
-    nextDensity = currentDensity;
-    nextVelocity = currentVelocity;
 
     // Traverse each grid cell for density advection
     for (int i = 1; i < rows - 1; ++i) {
@@ -120,10 +113,10 @@ void FluidSolver::Advection() {
             nextDensity.SetValue(i, j, interpolatedDensity);
 
             // Perform bilinear interpolation for velocity components
-            auto topLeftVel = currentVelocity.GetVector(y0, x0);
-            auto topRightVel = currentVelocity.GetVector(y0, x1);
-            auto bottomLeftVel = currentVelocity.GetVector(y1, x0);
-            auto bottomRightVel = currentVelocity.GetVector(y1, x1);
+            glm::vec2 topLeftVel = currentVelocity.GetVector(y0, x0);
+            glm::vec2 topRightVel = currentVelocity.GetVector(y0, x1);
+            glm::vec2 bottomLeftVel = currentVelocity.GetVector(y1, x0);
+            glm::vec2 bottomRightVel = currentVelocity.GetVector(y1, x1);
 
             float interpolatedVelX =
                 (1 - dx) * (1 - dy) * topLeftVel.x +
@@ -143,8 +136,8 @@ void FluidSolver::Advection() {
     }
 
     // Update the current density and velocity to the next ones after advection
-    currentDensity = nextDensity;
-    currentVelocity = nextVelocity;
+    currentDensity.SwapWith(nextDensity);
+    currentVelocity.SwapWith(nextVelocity);
 }
 
 void FluidSolver::ClearDivergence() {
@@ -207,7 +200,7 @@ void FluidSolver::ClearDivergence() {
         }
     }
 
-    SetReflectiveBoundary();
+    //SetReflectiveBoundary();
 }
 
 void FluidSolver::Step() {
@@ -222,7 +215,7 @@ void FluidSolver::Step() {
         }
     }
 
-    for (int j = cols / 2 + offset; j < cols - 1; j++) {
+    for (int j = cols / 2 - offset; j < cols - 1; j++) {
         for (int i = rows / 2 - offset; i < rows / 2 + offset; i++) {
             this->currentVelocity.SetVector(rows / 2, j, sourceVelocity);
         }

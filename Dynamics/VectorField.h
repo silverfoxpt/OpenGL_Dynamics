@@ -30,6 +30,26 @@ class VectorField {
         std::vector<float> GeneratePositionField(float startX, float startY, float length);
         std::vector<float> GenerateColorField();
         void TestUpdate();
+
+        // Swap function
+        void SwapWith(VectorField& other) {
+            std::swap(vectorField, other.vectorField);
+            std::swap(rows, other.rows);
+            std::swap(cols, other.cols);
+            std::swap(maxStrength, other.maxStrength);
+            std::swap(defaultStartColor, other.defaultStartColor);
+            std::swap(defaultEndColor, other.defaultEndColor);
+        }
+
+        // CopyFrom function
+        void CopyFrom(const VectorField& other) {
+            vectorField = other.vectorField;
+            rows = other.rows;
+            cols = other.cols;
+            maxStrength = other.maxStrength;
+            defaultStartColor = other.defaultStartColor;
+            defaultEndColor = other.defaultEndColor;
+        }
 };
 
 #endif

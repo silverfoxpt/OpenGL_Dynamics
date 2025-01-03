@@ -1,3 +1,5 @@
+#pragma GCC optimize("O3,unroll-loops")
+
 #include <iostream>
 #include <glad/glad.h> 
 #include <GLFW/glfw3.h>
@@ -25,51 +27,6 @@
 // All texture implementation should be below here
 #define STB_IMAGE_IMPLEMENTATION
 #include "./Texture/Texture2D.h"
-
-// Variables to store mouse click position in world coordinates
-// glm::vec2 clickedPosition(0.0f, 0.0f);
-// bool mouseClicked = false;
-
-// // Mouse callback function
-// void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-//     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-//         mouseClicked = true;
-
-//         // Get cursor position in screen coordinates
-//         double xpos, ypos;
-//         glfwGetCursorPos(window, &xpos, &ypos);
-
-//         // Get window size to transform screen coordinates
-//         int width, height;
-//         glfwGetWindowSize(window, &width, &height);
-
-//         // Convert screen coordinates to normalized device coordinates (NDC)
-//         float xNDC = (2.0f * xpos) / width - 1.0f;
-//         float yNDC = 1.0f - (2.0f * ypos) / height;
-
-//         // Convert NDC to world coordinates
-//         glm::vec4 ndcCoords = glm::vec4(xNDC, yNDC, 0.0f, 1.0f);
-
-//         // Define your view and projection matrices
-//         glm::mat4 view = glm::mat4(1.0f);
-//         glm::mat4 projection = glm::ortho(0.0f, 800.0f, -600.0f, 0.0f, 0.0f, 100.0f);
-
-//         // Transform NDC to world coordinates using the inverse of projection and view
-//         glm::mat4 inverseMatrix = glm::inverse(projection * view);
-//         glm::vec4 worldCoords = inverseMatrix * ndcCoords;
-
-//         // Divide by w to perform perspective division (if necessary)
-//         worldCoords /= worldCoords.w;
-
-//         // Store the world coordinates
-//         clickedPosition = glm::vec2(worldCoords.x, worldCoords.y);
-
-//         // Output to console for debugging
-//         std::cout << "Mouse clicked at world position: (" << clickedPosition.x << ", " << clickedPosition.y << ")" << std::endl;
-//     } else {
-//         mouseClicked = false;
-//     }
-// }
 
 // Variables to store mouse state and positions
 struct MouseState {
@@ -193,7 +150,7 @@ ShaderProgram colorOnlyShaderProgram;
 
 // Values
 int rows = 200, cols = 200;
-float squareSize = 2;
+float squareSize = 3;
 
 FluidSolver fluidSimulation(rows, cols);
 
@@ -210,11 +167,11 @@ void ProcessDrawing() {
     // For Square Grid
     squareVertices  = SquareGridColorDraw::GenerateSampleGrid(rows, cols, squareSize);
     colorSquareGrid = SquareGridColorDraw(
-        rows, 
-        cols, 
-        squareSize, 
-        squareVertices, 
-        fluidSimulation.currentDensity.GenerateColorField(), 
+        rows,
+        cols,
+        squareSize,
+        squareVertices,
+        fluidSimulation.currentDensity.GenerateColorField(),
         GL_DYNAMIC_DRAW
     );
 
@@ -250,6 +207,7 @@ void ProcessRendering() {
     }
 
     fluidSimulation.timeStep = 1.0f / currentFPS;
+    // fluidSimulation.timeStep = 0.1f;
     fluidSimulation.Step();
 
     // Get transformations
