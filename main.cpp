@@ -149,7 +149,7 @@ GLFWwindow* window;
 ShaderProgram colorOnlyShaderProgram;
 
 // Values
-int rows = 400, cols = 400;
+int rows = 600, cols = 600;
 float squareSize = 1;
 
 FluidSolver fluidSimulation(rows, cols);

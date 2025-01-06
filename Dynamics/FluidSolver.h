@@ -27,6 +27,9 @@ class FluidSolver {
         ValueField currentDensity, nextDensity;
         VectorField currentVelocity, nextVelocity;
 
+        ValueField divergence;
+        ValueField pressure;
+
         FluidSolver(int rows, int cols);
 
         void Diffusion();

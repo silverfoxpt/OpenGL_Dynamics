@@ -5,6 +5,7 @@ FluidSolver::FluidSolver(int rows, int cols) {
     this->rows = rows; this->cols = cols; this->timeStep = timeStep;
     currentDensity = nextDensity = ValueField(rows, cols, initialDensity);
     currentVelocity = nextVelocity = VectorField(rows, cols, initialVelocity);
+    this->divergence = this->pressure = ValueField(rows, cols, 0.0f);
 }
 
 void FluidSolver::SetReflectiveBoundary() {
@@ -43,7 +44,7 @@ void FluidSolver::Diffusion() {
     float alpha = diffusionRate * timeStep;
 
     // Function to process a 2x2 square region
-    auto processSquare = [&](int startRow, int startCol, int endRow, int endCol) {
+    auto processBlock = [&](int startRow, int startCol, int endRow, int endCol) {
         for (int i = startRow; i < endRow; ++i) {
             for (int j = startCol; j < endCol; ++j) {
                 if (i >= 1 && i < rows - 1 && j >= 1 && j < cols - 1) {
@@ -69,17 +70,19 @@ void FluidSolver::Diffusion() {
     };
 
     for (int iter = 0; iter < maxIterations; ++iter) {
-        const int numThreads = 4; // Fixed number of threads
+        // Get number of available threads (cores)
+        int numThreads = std::thread::hardware_concurrency(); // Automatically gets the available number of threads
         std::vector<std::thread> threads;
 
-        // Assign 2x2 blocks to threads
-        int blockHeight = (rows - 2) / 2; // Divide grid into two vertical parts
-        int blockWidth = (cols - 2) / 2;  // Divide grid into two horizontal parts
+        // Divide the grid into blocks for each thread
+        int blockHeight = (rows - 2) / numThreads;  // Divide the grid by available threads (excluding boundary rows)
+        int blockWidth = cols - 2;  // The full width will be handled by each thread
 
-        threads.emplace_back(processSquare, 1, 1, 1 + blockHeight, 1 + blockWidth);                     // Top-left
-        threads.emplace_back(processSquare, 1, 1 + blockWidth, 1 + blockHeight, cols - 1);             // Top-right
-        threads.emplace_back(processSquare, 1 + blockHeight, 1, rows - 1, 1 + blockWidth);             // Bottom-left
-        threads.emplace_back(processSquare, 1 + blockHeight, 1 + blockWidth, rows - 1, cols - 1);      // Bottom-right
+        for (int threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
+            int startRow = 1 + threadIndex * blockHeight;
+            int endRow = (threadIndex == numThreads - 1) ? rows - 1 : startRow + blockHeight;
+            threads.emplace_back(processBlock, startRow, 1, endRow, cols - 1); // Process each vertical block
+        }
 
         // Join all threads
         for (auto& thread : threads) {
@@ -161,17 +164,19 @@ void FluidSolver::Advection() {
         }
     };
 
-    const int numThreads = 4; // Fixed number of threads
+    // Get number of available threads (cores)
+    int numThreads = std::thread::hardware_concurrency(); // Automatically gets the available number of threads
     std::vector<std::thread> threads;
 
-    // Assign 2x2 blocks to threads
-    int blockHeight = (rows - 2) / 2; // Divide grid into two vertical parts
-    int blockWidth = (cols - 2) / 2;  // Divide grid into two horizontal parts
+    // Divide the grid into blocks for each thread
+    int blockHeight = (rows - 2) / numThreads;  // Divide the grid by available threads (excluding boundary rows)
+    int blockWidth = cols - 2;  // The full width will be handled by each thread
 
-    threads.emplace_back(processBlock, 1, 1, 1 + blockHeight, 1 + blockWidth);                     // Top-left
-    threads.emplace_back(processBlock, 1, 1 + blockWidth, 1 + blockHeight, cols - 1);             // Top-right
-    threads.emplace_back(processBlock, 1 + blockHeight, 1, rows - 1, 1 + blockWidth);             // Bottom-left
-    threads.emplace_back(processBlock, 1 + blockHeight, 1 + blockWidth, rows - 1, cols - 1);      // Bottom-right
+    for (int threadIndex = 0; threadIndex < numThreads; ++threadIndex) {
+        int startRow = 1 + threadIndex * blockHeight;
+        int endRow = (threadIndex == numThreads - 1) ? rows - 1 : startRow + blockHeight;
+        threads.emplace_back(processBlock, startRow, 1, endRow, cols - 1); // Process each vertical block
+    }
 
     // Join all threads
     for (auto& thread : threads) {
@@ -189,10 +194,7 @@ void FluidSolver::ClearDivergence() {
     // Parameters for the pressure solver
     const int maxIterations = 3;  // Iterations for pressure solving
     const float overRelaxation = 1.9f;  // Over-relaxation parameter for faster convergence
-    ValueField pressure(rows, cols, 0.0f);  // Pressure field to solve for
-
-    // First calculate divergence at each cell using central differences
-    ValueField divergence(rows, cols, 0.0f);
+    pressure = ValueField(rows, cols, 0.0f);
     
     // Function to process a 2x2 block for divergence calculation
     auto processDivergenceBlock = [&](int startRow, int startCol, int endRow, int endCol) {
