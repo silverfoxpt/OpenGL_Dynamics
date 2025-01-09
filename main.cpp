@@ -149,7 +149,7 @@ GLFWwindow* window;
 ShaderProgram colorOnlyShaderProgram;
 
 // Values
-int rows = 600, cols = 600;
+int rows = 602, cols = 602;
 float squareSize = 1;
 
 FluidSolver fluidSimulation(rows, cols);
@@ -290,6 +290,8 @@ int main() {
 
     Test();
     ProcessDrawing();
+
+    std::cout << std::thread::hardware_concurrency() << '\n';
 
     // Draw loop - Important
     while(!glfwWindowShouldClose(window))

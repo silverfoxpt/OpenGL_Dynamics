@@ -40,7 +40,6 @@ void FluidSolver::Diffusion() {
     SetReflectiveBoundary();
 
     // Gauss-Seidel parameters
-    int maxIterations = 3; // Number of iterations for convergence
     float alpha = diffusionRate * timeStep;
 
     // Function to process a 2x2 square region
@@ -69,7 +68,7 @@ void FluidSolver::Diffusion() {
         }
     };
 
-    for (int iter = 0; iter < maxIterations; ++iter) {
+    for (int iter = 0; iter < gaussSeidelIterations; ++iter) {
         // Get number of available threads (cores)
         int numThreads = std::thread::hardware_concurrency(); // Automatically gets the available number of threads
         std::vector<std::thread> threads;
@@ -192,9 +191,11 @@ void FluidSolver::ClearDivergence() {
     SetReflectiveBoundary();
 
     // Parameters for the pressure solver
-    const int maxIterations = 3;  // Iterations for pressure solving
     const float overRelaxation = 1.9f;  // Over-relaxation parameter for faster convergence
     pressure = ValueField(rows, cols, 0.0f);
+
+    int blockHeight = (rows - 2) / 2;
+    int blockWidth = (cols - 2) / 4;
     
     // Function to process a 2x2 block for divergence calculation
     auto processDivergenceBlock = [&](int startRow, int startCol, int endRow, int endCol) {
@@ -213,25 +214,27 @@ void FluidSolver::ClearDivergence() {
         }
     };
 
-    // Divide the grid into 4 blocks
-    int blockHeight = (rows - 2) / 2;
-    int blockWidth = (cols - 2) / 2;
     std::vector<std::thread> threads;
 
-    threads.emplace_back(processDivergenceBlock, 1, 1, 1 + blockHeight, 1 + blockWidth);        // Top-left block
-    threads.emplace_back(processDivergenceBlock, 1, 1 + blockWidth, 1 + blockHeight, cols - 1);    // Top-right block
-    threads.emplace_back(processDivergenceBlock, 1 + blockHeight, 1, rows - 1, 1 + blockWidth);    // Bottom-left block
-    threads.emplace_back(processDivergenceBlock, 1 + blockHeight, 1 + blockWidth, rows - 1, cols - 1); // Bottom-right block
-
-    // Join all threads
-    for (auto& thread : threads) {
-        thread.join();
+    // Create 8 threads for divergence calculation
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            threads.emplace_back(
+                processDivergenceBlock, 
+                1 + i * blockHeight, 
+                1 + j * blockWidth, 
+                1 + (i + 1) * blockHeight, 
+                1 + (j + 1) * blockWidth
+            );
+        }
     }
+
+    for (auto& thread : threads) thread.join();
 
     // Solve the pressure Poisson equation using Gauss-Seidel relaxation
     // Function to process a 2x2 block for pressure solving
     auto processPressureBlock = [&](int startRow, int startCol, int endRow, int endCol) {
-        for (int iter = 0; iter < maxIterations; ++iter) {
+        for (int iter = 0; iter < gaussSeidelIterations; ++iter) {
             for (int i = startRow; i < endRow; ++i) {
                 for (int j = startCol; j < endCol; ++j) {
                     if (i >= 1 && i < rows - 1 && j >= 1 && j < cols - 1) {
@@ -250,17 +253,22 @@ void FluidSolver::ClearDivergence() {
         }
     };
 
-    // Divide the grid into 4 blocks for pressure solving
     threads.clear();
-    threads.emplace_back(processPressureBlock, 1, 1, 1 + blockHeight, 1 + blockWidth);           // Top-left block
-    threads.emplace_back(processPressureBlock, 1, 1 + blockWidth, 1 + blockHeight, cols - 1);     // Top-right block
-    threads.emplace_back(processPressureBlock, 1 + blockHeight, 1, rows - 1, 1 + blockWidth);     // Bottom-left block
-    threads.emplace_back(processPressureBlock, 1 + blockHeight, 1 + blockWidth, rows - 1, cols - 1); // Bottom-right block
 
-    // Join all threads
-    for (auto& thread : threads) {
-        thread.join();
+    // Create 8 threads for pressure solving
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            threads.emplace_back(
+                processPressureBlock, 
+                1 + i * blockHeight, 
+                1 + j * blockWidth, 
+                1 + (i + 1) * blockHeight, 
+                1 + (j + 1) * blockWidth
+            );
+        }
     }
+
+    for (auto& thread : threads) thread.join();
 
     // Subtract pressure gradient from velocity field to make it divergence-free
     // Function to process a 2x2 block for velocity update
@@ -283,36 +291,41 @@ void FluidSolver::ClearDivergence() {
         }
     };
 
-    // Divide the grid into 4 blocks for velocity update
     threads.clear();
-    threads.emplace_back(processVelocityBlock, 1, 1, 1 + blockHeight, 1 + blockWidth);           // Top-left block
-    threads.emplace_back(processVelocityBlock, 1, 1 + blockWidth, 1 + blockHeight, cols - 1);     // Top-right block
-    threads.emplace_back(processVelocityBlock, 1 + blockHeight, 1, rows - 1, 1 + blockWidth);     // Bottom-left block
-    threads.emplace_back(processVelocityBlock, 1 + blockHeight, 1 + blockWidth, rows - 1, cols - 1); // Bottom-right block
 
-    // Join all threads
-    for (auto& thread : threads) {
-        thread.join();
+    // Create 8 threads for velocity update
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            threads.emplace_back(
+                processVelocityBlock, 
+                1 + i * blockHeight, 
+                1 + j * blockWidth, 
+                1 + (i + 1) * blockHeight, 
+                1 + (j + 1) * blockWidth
+            );
+        }
     }
+
+    for (auto& thread : threads) thread.join();
 
     //SetReflectiveBoundary();
 }
 
 void FluidSolver::Step() {
     // Add velocity to create movement
-    float baseVelocity = currentVelocity.maxStrength; // Adjust this value to control speed
-    glm::vec2 sourceVelocity(baseVelocity, 0.0f);
+    float baseVelocity = currentVelocity.maxStrength / 1.2; // Adjust this value to control speed
+    glm::vec2 sourceVelocity(0.0f, -baseVelocity);
 
-    int offset = 40;
+    int offset = 10;
     for (int i = rows / 2 - offset; i < rows / 2 + offset; i++) {
         for (int j = cols / 2 - offset; j < cols / 2 + offset; j++) {
             this->currentDensity.SetValue(i, j, 1.0f);
         }
     }
 
-    for (int j = cols / 2 - offset; j < cols - 1; j++) {
-        for (int i = rows / 2 - offset; i < rows / 2 + offset; i++) {
-            this->currentVelocity.SetVector(rows / 2, j, sourceVelocity);
+    for (int j = cols / 2 - offset; j < cols / 2 + offset; j++) {
+        for (int i = rows / 2 - offset; i >= 1; i--) {
+            this->currentVelocity.SetVector(i, cols / 2, sourceVelocity);
         }
     }
 
