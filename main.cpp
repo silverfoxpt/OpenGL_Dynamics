@@ -23,6 +23,8 @@
 #include "./Dynamics/VectorField.h"
 #include "./Dynamics/ValueField.h"
 #include "./Dynamics/FluidSolver.h"
+#include "./Dynamics/FluidSolverC.h"
+#include "./Dynamics/FluidSolverCGPU.h"
 
 // All texture implementation should be below here
 #define STB_IMAGE_IMPLEMENTATION
@@ -149,10 +151,10 @@ GLFWwindow* window;
 ShaderProgram colorOnlyShaderProgram;
 
 // Values
-int rows = 602, cols = 602;
-float squareSize = 1;
+int rows = 202, cols = 202;
+float squareSize = 2.0f;
 
-FluidSolver fluidSimulation(rows, cols);
+FluidSolverC fluidSimulation(rows, cols);
 
 // Displaying
 LinesColorDraw arrows;
@@ -181,22 +183,28 @@ void ProcessDrawing() {
     colorOnlyShaderProgram = ShaderProgram(colorOnlyVert.shaderId, colorOnlyFrag.shaderId);
     colorOnlyShaderProgram.DeleteLinkedShader(colorOnlyVert.shaderId, colorOnlyFrag.shaderId);
 
-    // For vector field & arrow
+    //For vector field & arrow
+    // arrows = LinesColorDraw(
+    //     fluidSimulation.currentVelocity.GeneratePositionField(0, 0, squareSize), 
+    //     fluidSimulation.currentVelocity.GenerateColorField()
+    // );
+
+    // Arakawa-C arrow
     arrows = LinesColorDraw(
-        fluidSimulation.currentVelocity.GeneratePositionField(0, 0, squareSize), 
-        fluidSimulation.currentVelocity.GenerateColorField()
-    );
+        fluidSimulation.GenerateArrowPositions(
+            /*startX=*/0.0f, /*startY=*/0.0f, squareSize),
+        fluidSimulation.GenerateArrowColours());        // colours
 }
 
 void ProcessRendering() {
     // Check mouse clicked
-    if (mouseState.isDragging) {
-        fluidSimulation.currentVelocity.SetVector(
-            (int) abs(mouseState.currentPosition.y) / squareSize,
-            (int) abs(mouseState.currentPosition.x) / squareSize,
-            glm::normalize(mouseState.dragDirection) * 60.0f
-        );
-    }
+    // if (mouseState.isDragging) {
+    //     fluidSimulation.currentVelocity.SetVector(
+    //         (int) abs(mouseState.currentPosition.y) / squareSize,
+    //         (int) abs(mouseState.currentPosition.x) / squareSize,
+    //         glm::normalize(mouseState.dragDirection) * 60.0f
+    //     );
+    // }
     
     if (mouseState.isPressed) {
         fluidSimulation.currentDensity.SetValue(
@@ -207,7 +215,7 @@ void ProcessRendering() {
     }
 
     fluidSimulation.timeStep = 1.0f / currentFPS;
-    // fluidSimulation.timeStep = 0.1f;
+    //fluidSimulation.timeStep = 0.5f;
     fluidSimulation.Step();
 
     // Get transformations
@@ -230,6 +238,16 @@ void ProcessRendering() {
     // arrows.UpdatePositions(fluidSimulation.currentVelocity.GeneratePositionField(0, 0, squareSize));
     // arrows.UpdateColors(fluidSimulation.currentVelocity.GenerateColorField());
     // arrows.Draw(2.0f);
+    
+    // Arakawa-C arrow grid
+    // build & upload the new vertex buffers
+    arrows.UpdatePositions(
+        fluidSimulation.GenerateArrowPositions(
+            /*startX=*/0.0f, /*startY=*/0.0f, squareSize));
+    
+    arrows.UpdateColors(
+        fluidSimulation.GenerateArrowColours());
+    arrows.Draw(2.0f);
 }
 
 /// @brief Resize window appropriately with glViewport, when user change window's size
@@ -287,6 +305,8 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  
     //glfwSetMouseButtonCallback(window, mouseButtonCallback);
     //glfwSetCursorPosCallback(window, cursorPositionCallback);
+
+    //fluidSimulation.initGPU();
 
     Test();
     ProcessDrawing();

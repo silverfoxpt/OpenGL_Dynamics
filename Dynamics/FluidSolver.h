@@ -23,7 +23,7 @@ class FluidSolver {
 
         int rows, cols;
         float currentAngle = 0;
-        int gaussSeidelIterations = 6;
+        int gaussSeidelIterations = 3;
 
         ValueField currentDensity, nextDensity;
         VectorField currentVelocity, nextVelocity;

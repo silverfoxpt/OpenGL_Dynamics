@@ -14,7 +14,7 @@ class ValueField {
     public:
         std::vector<std::vector<float>> valueField;
         int rows, cols;
-        float maxValue = 1.0;
+        float maxValue = 1.0f;
         glm::vec3 defaultMaxColor = glm::vec3(1.0f, 1.0f, 1.0f); //White
 
         std::vector<float> colorData;
@@ -35,6 +35,28 @@ class ValueField {
             std::swap(maxValue, other.maxValue);
             std::swap(defaultMaxColor, other.defaultMaxColor);
             std::swap(colorData, other.colorData);
+        }
+
+        std::vector<float> GenerateVectorPositionField(
+             ValueField& vField,       // staggered v-component
+            float startX, float startY,
+            float squareLength,
+            float maxStrength = 60.0f) ;
+    
+        // ---------------------------------------------------------------------
+        // Per-vertex colours on the same red➞green ramp you had before.
+        // ---------------------------------------------------------------------
+        std::vector<float> GenerateVectorColorField(
+             ValueField& vField,
+            float maxStrength           = 60.0f) ;
+
+        std::vector<float> toFlat() const
+        {
+            std::vector<float> flat;
+            flat.reserve(rows * cols);
+            for (const auto& row : valueField)
+                flat.insert(flat.end(), row.begin(), row.end());
+            return flat;          // NRVO / move-elided, zero extra copy outside
         }
 };
 

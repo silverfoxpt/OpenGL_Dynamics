@@ -97,6 +97,22 @@ void FluidSolver::Advection() {
 
     // Parameters for advection
     float dt = timeStep;
+
+    // --- CFL CHECK START ---
+    float maxVelocity = 0.0f;
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            glm::vec2 v = currentVelocity.GetVector(i, j);
+            maxVelocity = std::max(maxVelocity, glm::length(v));
+        }
+    }
+    if (maxVelocity * dt > 1.0f) {
+        std::cerr << "[CFL WARNING] max(|velocity| * dt) = "
+                << (maxVelocity * dt)
+                << " > 1!\n";
+    }
+    // --- CFL CHECK END ---
+
     float gridSpacing = 1.0f; // Assuming uniform grid spacing of 1 unit.
 
     // Function to process a 2x2 block

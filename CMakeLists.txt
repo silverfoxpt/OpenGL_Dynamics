@@ -17,6 +17,8 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/Shape")
 add_subdirectory("${PROJECT_SOURCE_DIR}/Texture")
 add_subdirectory("${PROJECT_SOURCE_DIR}/Dynamics")
 
+find_package(OpenMP REQUIRED)
+
 # For OpenGL 4.6
 add_subdirectory("${PROJECT_SOURCE_DIR}/deps/glad")
 #include_directories("${PROJECT_SOURCE_DIR}/Image_Load")
@@ -31,5 +33,6 @@ target_link_libraries(
     Shape
     Texture
     Dynamics
+    OpenMP::OpenMP_CXX
 )
 

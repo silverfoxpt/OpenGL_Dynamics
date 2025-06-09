@@ -16,7 +16,7 @@ class VectorField {
         int rows, cols;
         float maxStrength = 60.0f;
         glm::vec3 defaultStartColor = glm::vec3(1.0f, 0.0f, 0.0f); //Red
-        glm::vec3 defaultEndColor = glm::vec3(0.0f, 1.0f, 0.0f); //Red
+        glm::vec3 defaultEndColor = glm::vec3(0.0f, 1.0f, 0.0f); //green
 
         VectorField() { }
         VectorField(int rows, int cols, glm::vec2 initialVec);

@@ -71,27 +71,28 @@ std::vector<float> VectorField::GeneratePositionField(float startX, float startY
 }
 
 std::vector<float> VectorField::GenerateColorField() {
-    std::vector<float> colorData;  // This will hold the color of each arrow.
-    colorData.reserve(this->rows * this->cols * 6);
+    std::vector<float> colorData;                 // two vertices × rgb
+    colorData.reserve(rows * cols * 6);
 
-    // Loop over each grid square.
-    for (int i = 0; i < this->rows; i++) {
-        for (int j = 0; j < this->cols; j++) {
-            // Get the vector (direction and magnitude) at the current grid cell.
-            glm::vec2 vector = this->vectorField[i][j];
-            float strength = glm::length(vector) / this->maxStrength;
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            // speed-based blend factor in [0,1]
+            float t = glm::length(vectorField[i][j]) / maxStrength;
+            if (t < 0.0f) t = 0.0f;               // manual clamp
+            else if (t > 1.0f) t = 1.0f;
 
-            // Add the color of this vector to the colorData array.
-            colorData.push_back(defaultStartColor.r * strength);
-            colorData.push_back(defaultStartColor.g * strength);
-            colorData.push_back(defaultStartColor.b * strength);
+            // interpolate from slow→fast colour
+            glm::vec3 c = (1.0f - t) * defaultStartColor  // cSlow
+                        + t * defaultEndColor;            // cFast
 
-            colorData.push_back(defaultEndColor.r * strength);
-            colorData.push_back(defaultEndColor.g * strength);
-            colorData.push_back(defaultEndColor.b * strength);
+            // duplicate for tail & head vertices
+            for (int v = 0; v < 2; ++v) {
+                colorData.push_back(c.r);
+                colorData.push_back(c.g);
+                colorData.push_back(c.b);
+            }
         }
     }
-
     return colorData;
 }
 
