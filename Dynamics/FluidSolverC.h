@@ -36,8 +36,10 @@ class FluidSolverC {
         glm::vec2 initialVelocity = glm::vec2(0.0f, 0.0f);
 
         int rows, cols;
+        int circleRadius = 3; // radius of solid circle obstacles
+        int startingRow = 160; // row to start injecting blobs
         float currentAngle = 0;
-        int gaussSeidelIterations = 3;
+        int gaussSeidelIterations = 20;
 
         ValueField currentDensity, nextDensity;
 
@@ -47,6 +49,7 @@ class FluidSolverC {
 
         ValueField divergence;
         ValueField pressure;
+        ValueField obstacleMask;
 
         FluidSolverC(int rows, int cols);
 
@@ -66,6 +69,8 @@ class FluidSolverC {
         std::vector<BlobInflow> activeBlobs;
         void InjectBlob(BlobInflow& blob);
         void MaybeSpawnBlob();
+
+        void AddSolidCircle(int centerI, int centerJ, int radius);
 
         void Step();
 

@@ -215,7 +215,7 @@ void ProcessRendering() {
     }
 
     fluidSimulation.timeStep = 1.0f / currentFPS;
-    //fluidSimulation.timeStep = 0.5f;
+    //fluidSimulation.timeStep = 0.01f;
     fluidSimulation.Step();
 
     // Get transformations

@@ -12,22 +12,25 @@
 
 class ValueField {
     public:
-        std::vector<std::vector<float>> valueField;
+        std::vector<float> valueField; // Now 1D
         int rows, cols;
         float maxValue = 1.0f;
         glm::vec3 defaultMaxColor = glm::vec3(1.0f, 1.0f, 1.0f); //White
 
         std::vector<float> colorData;
 
-        ValueField() { }
+        ValueField() : rows(0), cols(0) { }
         ValueField(int rows, int cols, float initialVal);
 
-        float GetValue(int rowIdx, int colIdx);
-        void SetValue(int rowIdx, int colIdx, float newVal);
-        
+        inline float GetValue(int rowIdx, int colIdx) const {
+            return valueField[rowIdx * cols + colIdx];
+        }
+        inline void SetValue(int rowIdx, int colIdx, float newVal) {
+            valueField[rowIdx * cols + colIdx] = newVal;
+        }
+
         std::vector<float> GenerateColorField();
 
-        // Swap function
         void SwapWith(ValueField& other) {
             std::swap(valueField, other.valueField);
             std::swap(rows, other.rows);
@@ -38,25 +41,18 @@ class ValueField {
         }
 
         std::vector<float> GenerateVectorPositionField(
-             ValueField& vField,       // staggered v-component
+             ValueField& vField,
             float startX, float startY,
             float squareLength,
-            float maxStrength = 60.0f) ;
-    
-        // ---------------------------------------------------------------------
-        // Per-vertex colours on the same red➞green ramp you had before.
-        // ---------------------------------------------------------------------
+            float maxStrength = 60.0f);
+
         std::vector<float> GenerateVectorColorField(
              ValueField& vField,
-            float maxStrength           = 60.0f) ;
+            float maxStrength = 60.0f);
 
         std::vector<float> toFlat() const
         {
-            std::vector<float> flat;
-            flat.reserve(rows * cols);
-            for (const auto& row : valueField)
-                flat.insert(flat.end(), row.begin(), row.end());
-            return flat;          // NRVO / move-elided, zero extra copy outside
+            return valueField;
         }
 };
 

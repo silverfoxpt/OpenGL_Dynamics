@@ -7,7 +7,20 @@ FluidSolverC::FluidSolverC(int rows, int cols) {
 
     // Initialize scalar fields on the cell centers
     currentDensity = nextDensity = ValueField(rows, cols, initialDensity);
-    pressure = divergence = ValueField(rows, cols, 0.0f);
+    obstacleMask = divergence = ValueField(rows, cols, 0.0f);
+
+    for (int i = 10; i <= 190; i+=10) {
+        AddSolidCircle(startingRow, i, circleRadius);
+    }
+
+    // int curStart = 5;
+    // for (int i = 160; i >= 160; i -= 10) {
+    //     for (int j = curStart; j <= 190; j += 10) {
+    //         AddSolidCircle(i, j, circleRadius);
+    //     }
+    //     curStart = (curStart == 5) ? 10 : 5; // alternate starting column
+    // }
+    // AddSolidCircle(startingRow, cols / 2, circleRadius);
 
     // Initialize velocity components staggered in C-grid style:
     // u (horizontal) lives on vertical edges => (rows, cols+1)
@@ -16,10 +29,26 @@ FluidSolverC::FluidSolverC(int rows, int cols) {
     vVel = nextVVel = ValueField(rows + 1, cols, initialVelocity.y); // v-component
 }
 
+void FluidSolverC::AddSolidCircle(int centerI, int centerJ, int radius)
+{
+    for (int i = -radius; i <= radius; ++i)
+        for (int j = -radius; j <= radius; ++j)
+        {
+            if (i*i + j*j <= radius*radius)
+            {
+                int ci = centerI + i;
+                int cj = centerJ + j;
+
+                if (ci > 0 && ci < rows-1 && cj > 0 && cj < cols-1)
+                    obstacleMask.SetValue(ci, cj, 1.0f);
+            }
+        }
+}
+
 glm::vec2 FluidSolverC::GetVelocityAtCenter(int i, int j) const
 {
-    float u_c = 0.5f * (uVel.valueField[i][j] + uVel.valueField[i][j + 1]);
-    float v_c = 0.5f * (vVel.valueField[i][j] + vVel.valueField[i + 1][j]);
+    float u_c = 0.5f * (uVel.valueField[i * (cols+1) + j] + uVel.valueField[i * (cols+1) + j + 1]);
+    float v_c = 0.5f * (vVel.valueField[i * cols + j] + vVel.valueField[(i + 1) * cols + j]);
     return glm::vec2(u_c, v_c);
 }
 
@@ -62,7 +91,7 @@ void FluidSolverC::SetVonNeumannBoundary()
 // Sponge OBC
 void FluidSolverC::SetSpongeBoundary(bool disperseVelocityOnly = true)
 {
-    const int   spongeThickness     = 20;
+    const int   spongeThickness     = 25;
     const float spongeFadeExponent  = 0.09f;
 
     auto fade = [&](float alpha)
@@ -233,16 +262,24 @@ void FluidSolverC::Diffusion()
             }
         for (auto& t : th) t.join();
     }
-
     currentDensity.SwapWith(nextDensity);
+
+    for (int i = 1; i < rows - 1; ++i)
+        for (int j = 1; j < cols - 1; ++j)
+        {
+            if (obstacleMask.GetValue(i, j) > 0.5f)
+            {
+                currentDensity.SetValue(i, j, 0.0f); // zero out density in obstacles
+            }
+        }
 }
 
 void FluidSolverC::Advection()
 {
     //SetReflectiveBoundary();
     //SetVonNeumannBoundary();
-    //SetSpongeBoundary();
-    ApplyRadiativeBoundary(vVel, 25.0f);  // Top edge of vertical velocity
+    SetSpongeBoundary();
+    //ApplyRadiativeBoundary(vVel, 25.0f);  // Top edge of vertical velocity
     //ApplyRadiativeBoundary(currentDensity, 0.5f);  // Dye propagation
 
     const float dt    = timeStep;
@@ -283,6 +320,12 @@ void FluidSolverC::Advection()
                 int x1 = clampInt(x0 + 1, 0, cols - 1);
                 y0 = clampInt(y0, 0, rows - 1);
                 int y1 = clampInt(y0 + 1, 0, rows - 1);
+
+                if (obstacleMask.GetValue(y0, x0) > 0.5f)
+                {
+                    nextDensity.SetValue(i, j, currentDensity.GetValue(i, j)); // no update
+                    continue;
+                }
 
                 float ρ =
                     (1 - dx) * (1 - dy) * currentDensity.GetValue(y0, x0) +
@@ -541,6 +584,18 @@ void FluidSolverC::ClearDivergence()
         for (auto& t : th) t.join();
     }
     //SetReflectiveBoundary();
+
+    for (int i = 1; i < rows - 1; ++i)
+        for (int j = 1; j < cols - 1; ++j)
+        {
+            if (obstacleMask.GetValue(i, j) > 0.5f)
+            {
+                uVel.SetValue(i, j, 0.0f);
+                uVel.SetValue(i, j+1, 0.0f);
+                vVel.SetValue(i, j, 0.0f);
+                vVel.SetValue(i+1, j, 0.0f);
+            }
+        }
 }
 
 void FluidSolverC::InjectRandomEddiesAtTop(float chance = 0.01f)
@@ -691,14 +746,16 @@ void FluidSolverC::InjectBlob(BlobInflow& blob)
 
 void FluidSolverC::Step()
 {
-    float baseVelocity =  60.0f / 1.1f;      // reuse your strength heuristic
+    float baseVelocity =  70.0f / 1.0f;      // reuse your strength heuristic
     glm::vec2 sourceVel(0.0f, -baseVelocity);
 
     const int offset = 15;
     int i0 = rows - 1 - offset;
     int i1 = rows - 1;
-    int j0 = cols / 2 - offset;
-    int j1 = cols / 2 + offset;
+    //int j0 = cols / 2 - offset;
+    //int j1 = cols / 2 + offset;
+    int j0 = 10;
+    int j1 = cols - 1 - 10;
 
     /* Add dye at cell centres */
     for (int i = i0; i < i1; ++i)
@@ -708,12 +765,23 @@ void FluidSolverC::Step()
     int centreCol = cols / 2;
     for (int i = i1; i >= i0; --i)
     {
-        uVel.SetValue(i, centreCol, sourceVel.x);   // = 0 in this demo
-        uVel.SetValue(i-1, centreCol, sourceVel.x);   // = 0 in this demo
+        // uVel.SetValue(i, centreCol, sourceVel.x);   // = 0 in this demo
+        // uVel.SetValue(i-1, centreCol, sourceVel.x);   // = 0 in this demo
 
-        vVel.SetValue(i, centreCol, sourceVel.y);
-        vVel.SetValue(i, centreCol-1, sourceVel.y);
+        // vVel.SetValue(i, centreCol, sourceVel.y);
+        // vVel.SetValue(i, centreCol-1, sourceVel.y);
+
+        for (int j = j0; j < j1; ++j)
+        {
+            uVel.SetValue(i, j, sourceVel.x);   // = 0 in this demo
+            uVel.SetValue(i-1, j, sourceVel.x); // = 0 in this demo
+
+            vVel.SetValue(i, j, sourceVel.y);
+            vVel.SetValue(i, j-1, sourceVel.y);
+        }
     }
+
+    std::cout << "ReL = " << baseVelocity * timeStep * circleRadius * 2 / diffusionRate << '\n';
 
     Diffusion();
     Advection();
@@ -727,7 +795,7 @@ void FluidSolverC::Step()
     const int maxActiveBlobs = 50;
     if (activeBlobs.size() < maxActiveBlobs)
     {
-        MaybeSpawnBlob();
+        //MaybeSpawnBlob();
     }    
 
     for (auto it = activeBlobs.begin(); it != activeBlobs.end(); ) {

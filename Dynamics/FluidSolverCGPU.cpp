@@ -185,7 +185,7 @@ void FluidSolverCGPU::downloadDensity()
     // scatter back into the 2-D vector
     for (int i = 0, idx = 0; i < rows; ++i)
         for (int j = 0; j < cols; ++j, ++idx)
-            currentDensity.valueField[i][j] = flat[idx];
+            currentDensity.SetValue(i, j, flat[idx]);
 }
 
 // void FluidSolverCGPU::diffusionGPU()
@@ -327,8 +327,8 @@ void FluidSolverCGPU::diffusionGPU()
 
 glm::vec2 FluidSolverCGPU::GetVelocityAtCenter(int i, int j) const
 {
-    float u_c = 0.5f * (uVel.valueField[i][j] + uVel.valueField[i][j + 1]);
-    float v_c = 0.5f * (vVel.valueField[i][j] + vVel.valueField[i + 1][j]);
+    float u_c = 0.5f * (uVel.valueField[i * (cols+1) + j] + uVel.valueField[i * (cols+1) + j + 1]);
+    float v_c = 0.5f * (vVel.valueField[i * cols + j] + vVel.valueField[(i + 1) * cols + j]);
     return glm::vec2(u_c, v_c);
 }
 
